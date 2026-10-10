@@ -4,6 +4,9 @@
 
 **Autor:** Brandon Nicolas Marimon Montaña – **Grupo:** 401 – **Fecha:** 10/10/2026
 
+## Github
+
+Se ha subido todo relacionado con esta memoria en el siguiente link: https://github.com/APOL023/practica1-so. En él se encuentran 5 archivos, 4 `.c` y uno `.md`, los cuales son código fuente y la memoria en formato Markdown. Además de las capturas de salida en terminal usando Ubuntu WSL.
 ## Contenido
 
 1. Introducción
@@ -109,7 +112,7 @@ $ ./malla 3 4 &
 $ pstree -c $!
 ```
 
-![[Pasted image 20261010215005.png]]
+![captura de malla](img/malla.png)
 
 ## 3. Ejercicio 1b – `ejec.c`
 
@@ -284,8 +287,8 @@ $ gcc -Wall -o ejec ejec.c
 $ ./ejec 15
 ```
 
-![[Pasted image 20261010215425.png]]
 
+![captura de ejec](img/ejec.png)
 ## 4. Ejercicio 2 – `hacha.c`
 
 ### 4.1 Enunciado
@@ -406,7 +409,7 @@ $ ls                    # para ver todos los archivos
 $ ls -l prueba.txt*     # para ver los archivos con bytes y nombre que empiece por                           prueba.txt
 ```
 
-![[Pasted image 20261010220609.png]]
+![captura de hacha](img/hacha.png)
 
 ## 5. Ejercicio 3 – `hijos.c`
 
@@ -433,23 +436,7 @@ hijos
 - **Orden de escritura.** Cada proceso anota su PID **antes** de crear a su hijo; así, cuando el subhijo llega al final, los PID de sus antepasados ya están escritos.
 - **Mensajes finales.** El proceso `hijos` espera con `wait` a todas las cadenas y después lee de la tabla los PID de la última fila.
 - **Liberación.** Solo `hijos` desvincula (`shmdt`) y elimina (`shmctl` con `IPC_RMID`) el segmento, para no dejar memoria compartida huérfana.
-- **Interpretación del enunciado.** El enunciado pide que cada subhijo muestre "sus padres". En esta solución se interpreta como los procesos antepasados de su propia columna (los de los niveles 1 a x-1), que son los que lo han creado en cadena. El proceso `hijos` (superpadre) no se repite ahí: ya se muestra en su propio mensaje.
-
-> **Variante B.** esos mismos más el del proceso `hijos` (el superpadre), que también es antepasado suyo. Salen x PIDs, que cuadra con “pid1 … pidx”. Cambios en `hijos.c`:
-
-```c
-/* 1) variable global, junto a las demás */
-pid_t pid_super;
-
-/* 2) en main(), justo después de creaComp() y antes de los fork */
-pid_super = getpid();
-
-/* 3) en columna(), en el else del subhijo, sustituir el printf y el for por: */
-printf("Soy el subhijo %d, mis padres son: %d", getpid(), pid_super);
-for (int i = 0; i < X - 1; i++)
-    printf(", %d", P(j, i));
-printf("\n");
-```
+- **Interpretación del enunciado.** El enunciado pide que cada subhijo muestre "sus padres". En esta solución se interpreta como los procesos antepasados de su propia columna (los de los niveles 1 a x-1), que son los que lo han creado en cadena. El proceso `hijos` (superpadre) no se repite ahí: ya se muestra en su propio mensaje. (Esta es la variantes o interpretacion A).
 
 ### 5.4 Código fuente
 
@@ -483,6 +470,7 @@ void borraComp(void) {
     }
 }
 
+#define P(j, i) tabla[(j) * X + (i)]
 void columna(int j, int nivel) {
     P(j, nivel) = getpid();            
 
@@ -536,6 +524,21 @@ int main(int argc, char *argv[]) {
 }
 ```
 
+ **Variante B.** esos mismos más el del proceso `hijos` (el superpadre), que también es antepasado suyo. Salen x PIDs, que cuadra con “pid1 … pidx”. Cambios en `hijos.c`:
+
+```c
+/* 1) variable global, junto a las demás */
+pid_t pid_super;
+
+/* 2) en main(), justo después de creaComp() y antes de los fork */
+pid_super = getpid();
+
+/* 3) en columna(), en el else del subhijo, sustituir el printf y el for por: */
+printf("Soy el subhijo %d, mis padres son: %d", getpid(), pid_super);
+for (int i = 0; i < X - 1; i++)
+    printf(", %d", P(j, i));
+printf("\n");
+```
 ### 5.5 Análisis del código
 
 **`creaComp()`.** Crea el segmento con `shmget(IPC_PRIVATE, x*y*sizeof(int), IPC_CREAT|0666)`, lo vincula con `shmat()` e inicializa la tabla a cero. `IPC_PRIVATE` porque solo accederán el creador y sus descendientes. 
@@ -558,11 +561,11 @@ $ ./hijos 3 2
 $ ipcs -m
 ```
 
-![[Pasted image 20261010222504.png]]
+![captura de hijos](img/hijos.png)
 
 ## 6. Conclusiones
 
-Esta práctica me ha servido para entender de forma práctica cómo trabaja un sistema operativo con los procesos y cómo se comunican entre ellos, a su vez de entender mejor fallos en terminal y logica.
+Esta práctica me ha servido para entender de forma práctica cómo trabaja un sistema operativo con los procesos y cómo se comunican entre ellos, y a entender mejor los errores en la terminal y en la logica de los programas
 
 ### Lo que se ha aprendido
 
@@ -574,6 +577,6 @@ Esta práctica me ha servido para entender de forma práctica cómo trabaja un s
 ### Lo que más ha costado
 
 - **Que ningún padre terminara antes que sus hijos.** Fue el problema más repetido a lo largo de los ejercicios. Se resolvió haciendo que cada padre esperara a sus hijos con `wait` o `waitpid` antes de terminar.
-- **Pasar de C++ o Python a C.** Las diferencias pequeñas de escritura entre lenguajes me hicieron perder tiempo al principio, ademas de errores de syntaxis basicos.
+- **Pasar de C++ o Python a C.** Las diferencias pequeñas de escritura entre lenguajes me hicieron perder tiempo al principio, además de errores básicos de sintaxis.
 - **Trabajar en Windows.** Al inicio no entendía por qué algunas funciones no funcionaban allí; son llamadas propias de Unix/Linux, así que hubo que trabajar en un entorno Linux, aunque descubri que de igual manera estan sus contrapartes en ese SO.
 - **Interpretar el enunciado de `hijos.c`.** Hubo dudas sobre qué procesos debía mostrar cada subhijo como "sus padres"; en el apartado 5.3 se explica el criterio elegido.
